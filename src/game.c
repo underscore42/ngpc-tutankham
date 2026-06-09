@@ -160,12 +160,12 @@ static void update_game(void)
     /* Camera: scroll when player nears edges of visible window */
     {
         u8 screen_x;
-        screen_x = (u8)(s_player_tx * 8);
-        if (screen_x > s_scroll_px + 5 * 8 && s_scroll_px < SCROLL_MAX) {
+        screen_x = (u8)(s_player_tx * 16);
+        if (screen_x > s_scroll_px + 5 * 16 && s_scroll_px < SCROLL_MAX) {
             s_scroll_px = (u8)(s_scroll_px + SCROLL_SPEED);
             if (s_scroll_px > SCROLL_MAX) s_scroll_px = SCROLL_MAX;
             SCR1_X = s_scroll_px;
-        } else if (screen_x < s_scroll_px + 4 * 8 && s_scroll_px > 0) {
+        } else if (screen_x < s_scroll_px + 4 * 16 && s_scroll_px > 0) {
             if (s_scroll_px >= SCROLL_SPEED) {
                 s_scroll_px = (u8)(s_scroll_px - SCROLL_SPEED);
             } else {
@@ -258,13 +258,13 @@ static void draw_player(void)
     u8 sy;
 
     /* Convert tile coords to pixel coords, subtract scroll offset */
-    sx = (u8)(s_player_tx * 8);
+    sx = (u8)(s_player_tx * 16);
     if (sx >= s_scroll_px) {
         sx = (u8)(sx - s_scroll_px);
     } else {
         sx = 0;
     }
-    sy = (u8)(s_player_ty * 8 + 8);  /* +8 for HUD row */
+    sy = (u8)(s_player_ty * 16 + 8);  /* +8 for HUD row */
 
     SetSprite(0, T_PLAY_TL, 0, sx,     sy,     P_PLAYER);
     SetSprite(1, T_PLAY_TR, 0, sx + 8, sy,     P_PLAYER);
