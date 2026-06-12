@@ -4,22 +4,119 @@
    Game tile bank (7 tiles at ID 148)
    ----------------------------------------------------------------------- */
 
-static const unsigned short game_tiles[7][8] = {
-    /* T_WALL (148) - warm brick */
-    {0xFC3F, 0xACCA, 0xBCAF, 0xFFFF, 0xCAAC, 0xFABF, 0xCCCA, 0xFFFF},
-    /* T_LOCK (149) - hourglass door */
-    {0x0FF0, 0x0990, 0x0660, 0x03C0, 0x03C0, 0x0660, 0x0990, 0x0FF0},
-    /* T_KEY (150) - gold diamond */
-    {0x0000, 0x0060, 0x00F0, 0x0FF0, 0x0FF0, 0x00F0, 0x0060, 0x0000},
-    /* T_PLAY_TL (151) */
-    {0x03C0, 0x0FF0, 0x3FFC, 0x3FFC, 0xFFFF, 0xFFFF, 0xFFFF, 0xCCC3},
-    /* T_PLAY_TR (152) */
-    {0x03C0, 0x0FF0, 0x3FFC, 0x3FFC, 0xFFFF, 0xFFFF, 0xFFFF, 0x3CCC},
-    /* T_PLAY_BL (153) */
-    {0xCCC3, 0xFFFF, 0xFFFF, 0x3FFC, 0x3FFC, 0x0FF0, 0x03C0, 0x0000},
-    /* T_PLAY_BR (154) */
-    {0x3CCC, 0xFFFF, 0xFFFF, 0x3FFC, 0x3FFC, 0x0FF0, 0x03C0, 0x0000}
+
+/* 32x32 Tut Mask - 16 x 8x8 tiles, used on final level */
+static const unsigned short tut_mask_32[16][8] = {
+    /* [0] TL */ {0x0000, 0x0000, 0x0002, 0x000E, 0x002D, 0x000D, 0x0002, 0x0002},
+    /* [1] TML */ {0x003F, 0x15FF, 0xF4E4, 0x70CB, 0x704F, 0x4E4F, 0x5E0F, 0xD000},
+    /* [2] TMR */ {0xF000, 0x72DC, 0x02EF, 0xC77F, 0xBE7C, 0x797C, 0xF87D, 0x0001},
+    /* [3] TR */ {0x0000, 0x0000, 0x0000, 0x6C00, 0xFC00, 0xF800, 0xF000, 0x9100},
+    /* [4] ML */ {0x00E5, 0x00E4, 0x0050, 0x0F00, 0x0FD0, 0x054C, 0x040C, 0x0FCC},
+    /* [5] MML */ {0xCFFF, 0x1FFF, 0x2FFF, 0x300F, 0x3003, 0x0FC0, 0x0280, 0x3002},
+    /* [6] MMR */ {0x5FFC, 0xFFFC, 0xFFFD, 0xF00F, 0xF00B, 0xC2E0, 0xC080, 0xC003},
+    /* [7] MR */ {0x07C0, 0x07C0, 0x0140, 0x0020, 0xB3F0, 0x2D50, 0x1D00, 0x7BFC},
+    /* [8] BML */ {0x0540, 0x0500, 0x3FA4, 0xE410, 0x4140, 0xBFF9, 0x1BE5, 0x0155},
+    /* [9] BMML */ {0x3FFF, 0x2FFF, 0x0FFF, 0x0FFF, 0x0BC0, 0x45BF, 0x407C, 0x193F},
+    /* [10] BMMR */ {0xFFFE, 0xFFFD, 0xBFE8, 0xFFD8, 0x0FD4, 0xFF40, 0x0E40, 0xF900},
+    /* [11] BMR */ {0x0154, 0x0000, 0x0BFF, 0x0117, 0x4050, 0xAFFF, 0xAAA9, 0x5000},
+    /* [12] BL */ {0x003F, 0x003F, 0x0029, 0x0020, 0x000F, 0x000F, 0x0005, 0x0003},
+    /* [13] BBL */ {0xDE45, 0xDF4B, 0x5F8B, 0x0FC6, 0xFF8F, 0xAF80, 0x4006, 0xF000},
+    /* [14] BBR */ {0xD052, 0x6052, 0x3051, 0x5050, 0x3053, 0xC052, 0x7000, 0x8003},
+    /* [15] BR */ {0xFF00, 0xFE00, 0xF800, 0x0000, 0xFC00, 0xFC00, 0x5000, 0x9000}
 };
+
+
+static const unsigned short game_tiles[84][8] = {
+    /* T_WALL_TL (148) */ {0x7FFF, 0x596A, 0x696A, 0x6AAA, 0x96A6, 0x5AAA, 0x96DA, 0x5555},
+    /* T_WALL_TR (149) */ {0xDFFF, 0x6EA9, 0x6EA9, 0x6E7A, 0x6EA5, 0x5AB9, 0x1EA4, 0x0540},
+    /* T_WALL_BL (150) */ {0xAA59, 0x6955, 0x695A, 0x295A, 0x965A, 0x690A, 0x4000, 0x4005},
+    /* T_WALL_BR (151) */ {0x9AA9, 0xAAE5, 0xAEA9, 0xAAA9, 0xAAA5, 0xABE9, 0x4140, 0x0000},
+    /* T_PLAY_TL (152) */ {0x0067, 0x006A, 0x001B, 0x7556, 0x0000, 0x00CF, 0x00BF, 0x003F},
+    /* T_PLAY_TR (153) */ {0xF400, 0xB600, 0xE800, 0x95AD, 0x0000, 0xCCF0, 0xFFA0, 0xC300},
+    /* T_PLAY_BL (154) */ {0xFF50, 0xD033, 0xF073, 0x0000, 0x05E0, 0x1FE0, 0x1040, 0x1500},
+    /* T_PLAY_BR (155) */ {0x00FC, 0xF2F7, 0xCCF3, 0x0800, 0x0F00, 0x0C00, 0x0150, 0x05A8},
+    /* T_PLAY2_TL (156) */ {0x0003, 0x0007, 0x0006, 0x0001, 0x0EBF, 0x0001, 0x001F, 0x000F},
+    /* T_PLAY2_TR (157) */ {0x0FC0, 0xF410, 0xE410, 0xA000, 0xFAAA, 0x5810, 0xFC30, 0xFFF0},
+    /* T_PLAY2_BL (158) */ {0x03F4, 0x017F, 0x0143, 0x3400, 0x3819, 0xD7FC, 0x42A8, 0x0000},
+    /* T_PLAY2_BR (159) */ {0x402F, 0xFFC2, 0xF010, 0x0000, 0x1C00, 0x3E80, 0x07F0, 0x2EA0},
+    /* T_ALCOVE_TL (160) */ {0xD665, 0x4000, 0xFAAA, 0xE6AA, 0x5500, 0xE900, 0xE900, 0xE900},
+    /* T_ALCOVE_TR (161) */ {0x6695, 0x0000, 0xEA9B, 0xAA9A, 0x0055, 0x03EA, 0x03EA, 0x03EA},
+    /* T_ALCOVE_BL (162) */ {0x6500, 0xFE00, 0xE900, 0xE900, 0xEA00, 0xD900, 0xE900, 0xE500},
+    /* T_ALCOVE_BR (163) */ {0x0055, 0x02FF, 0x02EA, 0x0299, 0x52FA, 0x02EA, 0x42E9, 0x0295},
+    /* T_SMOKE_A_TL (164) */ {0x000F, 0x003F, 0x003F, 0xAFFF, 0xFFDF, 0xFFFA, 0xFFFA, 0xAD7F},
+    /* T_SMOKE_A_TR (165) */ {0xF000, 0xFC00, 0xFC00, 0xF2B0, 0xFFFA, 0xA7FA, 0xA7FA, 0xFFE0},
+    /* T_SMOKE_A_BL (166) */ {0x06BF, 0x0ABF, 0x0ABF, 0xFFEF, 0xFFFF, 0xFFFA, 0xFFFA, 0x0950},
+    /* T_SMOKE_A_BR (167) */ {0xFFD0, 0xF950, 0xF950, 0xABFA, 0xFFFF, 0x5FFA, 0x5FFA, 0x0560},
+    /* T_SMOKE_B_TL (168) */ {0x000F, 0x00AF, 0x035F, 0x035F, 0xFFFD, 0xBFFF, 0x2BF7, 0x3DFF},
+    /* T_SMOKE_B_TR (169) */ {0xE000, 0xF000, 0xFFC0, 0xFFC0, 0x5FFF, 0xF5FE, 0xFFD4, 0xFAEA},
+    /* T_SMOKE_B_BL (170) */ {0x3DFF, 0xFFAF, 0xFFFF, 0x3FAE, 0x2AFE, 0x2AFE, 0x03FE, 0x00A8},
+    /* T_SMOKE_B_BR (171) */ {0xFAEA, 0xFAAA, 0xEF80, 0xBAFE, 0xBAFF, 0xBAFF, 0xAFFE, 0x0580},
+    /* T_SMOKE_C_TL (172) */ {0x00FF, 0xFFFF, 0xFF5A, 0xFF5A, 0xABFF, 0x00FF, 0x3FFF, 0xFFFF},
+    /* T_SMOKE_C_TR (173) */ {0xC0C0, 0xCFFE, 0xBAD4, 0xBAD4, 0xEFC0, 0xFABC, 0xFA3F, 0xEFE8},
+    /* T_SMOKE_C_BL (174) */ {0xFFFF, 0xFFFF, 0xFF5E, 0x68FF, 0xFCFF, 0xFCFF, 0xFCFF, 0x000A},
+    /* T_SMOKE_C_BR (175) */ {0xEFE8, 0xFFC0, 0xBF80, 0xEAFE, 0xEAFE, 0xEAFE, 0xE0A8, 0x8000},
+    /* T_HIERO1_TL (176) */ {0xBFFF, 0x7140, 0x7FFF, 0x7806, 0x7BD7, 0x7ABC, 0x7FDB, 0x7FE3},
+    /* T_HIERO1_TR (177) */ {0xFFFF, 0x401D, 0xEBF9, 0x9DBD, 0xBD69, 0xE969, 0x196D, 0x6DAD},
+    /* T_HIERO1_BL (178) */ {0x7EB0, 0x7AB0, 0x7AF0, 0x7E40, 0x396A, 0x7555, 0x7EBA, 0x75EA},
+    /* T_HIERO1_BR (179) */ {0x7569, 0xC16D, 0xA96D, 0x057D, 0x5965, 0x5559, 0xFFF9, 0xA6A9},
+    /* T_HIERO2_TL (180) */ {0xFFFF, 0xD101, 0xDFFF, 0xEEFF, 0xEFE0, 0xEF85, 0xE9B0, 0xD820},
+    /* T_HIERO2_TR (181) */ {0xFFFF, 0x400D, 0xFFED, 0xFCFD, 0x0EED, 0x4EAD, 0x3CDD, 0x34FD},
+    /* T_HIERO2_BL (182) */ {0xEBF0, 0xD9EA, 0xD855, 0xD9DD, 0xD8CD, 0xD555, 0xFEFE, 0xF9AA},
+    /* T_HIERO2_BR (183) */ {0x0BFD, 0xF8AD, 0x553D, 0x2DAC, 0x286D, 0x5559, 0xFAF9, 0xADA9},
+    /* T_KEY_TL (184) */ {0x00FF, 0x0FFF, 0xFFA0, 0xFF00, 0xFF00, 0xFF00, 0x00FF, 0x000A},
+    /* T_KEY_TR (185) */ {0xFFF0, 0xFFFF, 0x00FF, 0x000F, 0x000F, 0x000F, 0xFFF0, 0xA000},
+    /* T_KEY_BL (186) */ {0x000A, 0x000F, 0x000F, 0x000F, 0x000F, 0x000F, 0x000F, 0x000F},
+    /* T_KEY_BR (187) */ {0xA000, 0x5000, 0xF000, 0xF0FA, 0xF5FF, 0xA000, 0xF0FF, 0xF000},
+    /* T_DOOR_TL (188) */ {0xFFFF, 0xFD5A, 0xF800, 0xF18A, 0xF149, 0xF184, 0xF24F, 0xE18C},
+    /* T_DOOR_TR (189) */ {0xFFFC, 0xAABC, 0x003C, 0x5E0D, 0x5E4C, 0x5E4C, 0xEE4D, 0x1A4C},
+    /* T_DOOR_BL (190) */ {0xF30C, 0xF20D, 0xF18C, 0xF286, 0xF280, 0xE185, 0xE185, 0xD000},
+    /* T_DOOR_BR (191) */ {0x73CC, 0xF3CC, 0xB00C, 0x514C, 0x0A4C, 0x5E4C, 0x5E4C, 0x050C},
+    /* T_DIAMOND_TL (192) */ {0x03FF, 0x1FFE, 0x3EFA, 0xFFFF, 0xFFFF, 0xFBBF, 0xFBFF, 0xE9AE},
+    /* T_DIAMOND_TR (193) */ {0xEB00, 0xBD80, 0xBD80, 0xFDAC, 0xFDAC, 0xFF6E, 0xFF7F, 0x94E8},
+    /* T_DIAMOND_BL (194) */ {0x3D6A, 0x0B5E, 0x03D9, 0x01F5, 0x01F5, 0x00B5, 0x000E, 0x000C},
+    /* T_DIAMOND_BR (195) */ {0xA750, 0x9B40, 0x5900, 0x6000, 0x6000, 0x6000, 0x8000, 0x0000},
+    /* T_RUBY_TL (196) */ {0x02FF, 0x0BFE, 0x2FFA, 0x2FFA, 0x3FEB, 0x76FF, 0xB555, 0x1555},
+    /* T_RUBY_TR (197) */ {0xD500, 0xB740, 0x9ED0, 0x9ED0, 0xED70, 0xFD54, 0x5755, 0x5610},
+    /* T_RUBY_BL (198) */ {0x1555, 0x15D5, 0x1995, 0x007F, 0x005E, 0x005E, 0x0059, 0x0005},
+    /* T_RUBY_BR (199) */ {0x5610, 0x5140, 0x5C50, 0xD500, 0x9400, 0x9400, 0x4400, 0x4000},
+    /* T_SCARAB_TL (200) */ {0x300F, 0xC03F, 0xC03F, 0x30C5, 0x1535, 0x0F3F, 0x00C0, 0x0A3F},
+    /* T_SCARAB_TR (201) */ {0xC00C, 0xD000, 0xE000, 0x4008, 0x5308, 0xFB00, 0x0903, 0xFC03},
+    /* T_SCARAB_BL (202) */ {0x0A3F, 0x0FC3, 0x0FE3, 0x0FD3, 0x0FD3, 0xCA83, 0xC0C3, 0xC03B},
+    /* T_SCARAB_BR (203) */ {0xFC03, 0xC300, 0xCF03, 0xCE03, 0xCF02, 0xC700, 0xCC00, 0xF000},
+    /* T_TUTMASK_TL (204) */ {0x001F, 0x02D6, 0x0EC9, 0x1E9E, 0x36E1, 0x21FF, 0x355F, 0x0D01},
+    /* T_TUTMASK_TR (205) */ {0xD000, 0xB800, 0x59D0, 0xB7E0, 0x4968, 0xFD18, 0xD50C, 0x4194},
+    /* T_TUTMASK_BL (206) */ {0xA5FE, 0xE4FD, 0xBD7F, 0x281F, 0x1F55, 0x0A62, 0x0F56, 0x0346},
+    /* T_TUTMASK_BR (207) */ {0xBE5E, 0x7D1F, 0xF9BE, 0xF060, 0x57F0, 0x9950, 0x83B0, 0x8380},
+    /* T_TELEPORT (208) */ {0xFD40, 0xFD40, 0x5400, 0x5400, 0x003F, 0x003F, 0x0015, 0x0015},
+    /* T_BULLET_FLY (209) */ {0x17D0, 0x17D0, 0x17D0, 0x5FFE, 0x5FFE, 0x1BC0, 0x1BC0, 0x1BC0},
+    /* T_BULLET_HUD (210) */ {0x5AA0, 0x5AA0, 0x5AA0, 0x5FF5, 0x5FF5, 0x5AA0, 0x5AA0, 0x5AA0},
+    /* T_HAT_HUD (211) */ {0x0FF0, 0x08D8, 0x08D8, 0x0714, 0xCF57, 0x4002, 0x4002, 0x1404},
+    /* T_SCORPION_TL (212) */ {0x0000, 0x0003, 0x00F0, 0x0010, 0x0000, 0x0000, 0x0000, 0x0003},
+    /* T_SCORPION_TR (213) */ {0x1900, 0xE750, 0x0005, 0x0001, 0x000D, 0x000D, 0x0704, 0xD750},
+    /* T_SCORPION_BL (214) */ {0x002C, 0x00BC, 0xFAC5, 0x0000, 0x05BC, 0x0000, 0x0038, 0x0FD0},
+    /* T_SCORPION_BR (215) */ {0x3D50, 0x3200, 0x4054, 0x0001, 0x2C03, 0x0203, 0x0100, 0x0000},
+    /* T_SNAKE_TL (216) */ {0x000F, 0x002F, 0x00B1, 0x00B0, 0x00B8, 0x0038, 0x000F, 0x000F},
+    /* T_SNAKE_TR (217) */ {0xFF00, 0xF170, 0x6EF8, 0x0014, 0x0000, 0x0000, 0xC000, 0xF000},
+    /* T_SNAKE_BL (218) */ {0x0000, 0x0000, 0x2FE0, 0xE080, 0xE000, 0x3FBB, 0x02A1, 0x0000},
+    /* T_SNAKE_BR (219) */ {0x2C00, 0x2E00, 0x2E00, 0x0C00, 0x0814, 0xE003, 0x483C, 0x0BC0},
+    /* T_BUG_TL (220) */ {0x0030, 0x0021, 0x0003, 0xC014, 0xC005, 0xC02F, 0x0F80, 0x002C},
+    /* T_BUG_TR (221) */ {0x0D00, 0x5C00, 0xE000, 0x0C00, 0x6100, 0xF500, 0x0054, 0x0950},
+    /* T_BUG_BL (222) */ {0x00AF, 0x351B, 0xC047, 0x0013, 0x3002, 0x3004, 0xC001, 0xC000},
+    /* T_BUG_BR (223) */ {0xE900, 0xF507, 0xE500, 0xD100, 0x8003, 0x1002, 0x5000, 0x0000},
+    /* T_MUMMY_TL (224) */ {0x0003, 0x002F, 0x003D, 0x000A, 0x0010, 0x0010, 0x00FF, 0xF02C},
+    /* T_MUMMY_TR (225) */ {0xFC50, 0xFC0C, 0x73F0, 0xA0F0, 0x08F4, 0x04F4, 0xFE50, 0x0303},
+    /* T_MUMMY_BL (226) */ {0xCF0E, 0x7002, 0x000C, 0x001C, 0x003D, 0x000B, 0x0000, 0x003F},
+    /* T_MUMMY_BR (227) */ {0x8008, 0xBFF0, 0x00F8, 0x14FF, 0x47FC, 0xD0FC, 0x0003, 0xE0FF},
+    /* T_BIRD_TL (228) */ {0x5FF0, 0x0BEF, 0xFFFA, 0xFFFA, 0x03FA, 0x0FF5, 0x0FFF, 0x0FF5},
+    /* T_BIRD_TR (229) */ {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xA000, 0xA950},
+    /* T_BIRD_BL (230) */ {0x0FF5, 0x0FF5, 0x03FF, 0x0000, 0x000F, 0x000F, 0x000F, 0x03FF},
+    /* T_BIRD_BR (231) */ {0xA950, 0x5550, 0xA295, 0xAC1A, 0x0400, 0x0400, 0x0400, 0xFA90}
+};
+
+
+
+
+
 
 /* -----------------------------------------------------------------------
    Title screen tile data - 20x11 tiles = 220 tiles at ID 300
@@ -247,147 +344,327 @@ static const unsigned short title_tiles[220][8] = {
 
 /* -----------------------------------------------------------------------
    Maze maps  [level][row][col]  8 levels x 9 rows x 32 cols
-   0=floor  1=wall  2=key
+   0=CELL_FLOOR  1=CELL_WALL  2=CELL_KEY  3=CELL_DOOR
    ----------------------------------------------------------------------- */
 
-static const u8 maze_map[8][9][16] = {
-    {   /* Level 0 */
+/* -----------------------------------------------------------------------
+   maze_map[level][zone][row][col]
+   zone 0 = Zone A (enter from left, key here, teleport at col14 row7)
+   zone 1 = Zone B (arrive via teleport, door exit at col14 row7)
+   Cell values: 0=floor 1=wall 2=key 3=door 4=treasure 5=generator 6=teleport
+   ----------------------------------------------------------------------- */
+
+static const u8 maze_map[8][2][9][16] = {
+  { /* Level 0 - Chamber 1 (blue) */
+    {   /* Zone A */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1},
-        {1,0,1,1,1,0,1,0,1,0,1,1,1,1,0,1},
-        {1,0,1,2,1,0,1,0,0,0,0,0,0,1,0,1},
-        {1,0,1,1,1,0,1,1,1,0,1,1,0,1,0,1},
-        {1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,1},
-        {1,1,1,0,1,1,1,0,1,0,1,0,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1},
+        {1,0,0,0,0,0,0,0,0,4,0,0,0,0,0,1},
+        {1,0,1,1,1,0,1,1,0,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,1,1,1,1,0,0,0,2,1},
+        {1,1,1,1,0,1,1,0,1,1,1,0,1,0,1,1},
+        {1,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1},
+        {1,0,1,1,0,1,1,1,1,1,1,1,0,1,5,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 1 */
+    {   /* Zone B */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1},
-        {1,0,1,0,1,0,1,1,1,1,0,0,1,0,1,1},
-        {1,0,1,0,0,0,0,2,0,1,0,0,0,0,0,1},
-        {1,0,1,0,1,1,1,1,0,1,0,0,1,0,1,1},
-        {1,0,0,0,0,0,0,0,0,1,0,0,1,0,0,1},
-        {1,1,0,1,1,0,1,1,0,1,0,0,1,1,0,1},
+        {1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1},
+        {1,0,0,0,1,0,0,1,5,0,0,0,0,0,0,1},
+        {1,0,1,0,1,1,0,1,1,0,1,1,0,1,1,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+  },
+  { /* Level 1 - Chamber 1 (blue) */
+    {   /* Zone A */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,1,0,1,1,0,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1},
+        {1,1,1,1,5,1,1,0,1,1,1,0,1,0,1,1},
+        {1,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1},
+        {1,0,1,1,0,1,1,1,1,1,1,1,0,1,5,1},
+        {1,0,0,0,0,0,4,0,0,2,0,0,0,0,6,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 2 */
+    {   /* Zone B */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1},
-        {1,0,1,1,0,1,1,1,0,0,1,0,0,0,1,1},
-        {1,0,1,0,0,0,0,1,0,0,0,0,2,0,0,1},
-        {1,0,1,0,1,1,0,1,0,0,1,0,1,0,1,1},
-        {1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,1},
-        {1,1,0,1,1,0,1,0,1,0,1,1,0,1,1,1},
-        {1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1},
+        {1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,1,0,1,0,1,1,0,1,1,1,0,1,5,1},
+        {1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,1},
+        {1,0,1,0,1,1,0,1,1,0,1,1,0,1,1,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 3 */
+  },
+  { /* Level 2 - Chamber 2 (purple) */
+    {   /* Zone A */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,0,0,4,1,0,0,0,0,1},
+        {1,0,1,1,1,0,1,1,0,1,1,1,0,1,0,1},
+        {1,0,0,0,0,0,1,0,0,0,0,0,2,1,0,1},
+        {1,1,0,1,1,1,1,0,1,1,0,1,1,1,0,1},
         {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,1,1,1,1,0,1,1,1,1,0,0,1,1},
-        {1,0,1,0,0,0,1,0,1,0,0,1,0,0,1,1},
-        {1,0,1,0,1,0,1,0,1,0,0,1,0,0,1,1},
-        {1,0,1,0,0,0,1,0,1,0,0,0,0,0,1,1},
-        {1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,5,1,1,0,1,1,0,5,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 4 */
+    {   /* Zone B */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1},
+        {1,0,1,1,0,1,1,0,1,0,1,0,1,1,5,1},
+        {1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,1},
+        {1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,0,1,1,0,1,5,1,0,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+  },
+  { /* Level 3 - Chamber 2 (purple) */
+    {   /* Zone A */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,0,0,4,1,0,0,0,0,1},
+        {1,1,0,1,1,0,1,1,1,0,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,1,0,0,0,0,2,0,0,1},
+        {1,0,1,1,1,0,1,1,1,1,0,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,0,1,5,1,1,0,1,0,5,1,0,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+    {   /* Zone B */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1},
+        {1,1,0,1,1,0,1,1,1,0,1,0,1,1,5,1},
+        {1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1},
+        {1,0,1,1,1,0,1,1,1,1,0,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,0,1,0,1,1,0,1,0,5,1,0,1,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+  },
+  { /* Level 4 - Chamber 3 (amber) */
+    {   /* Zone A */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,1,0,4,0,1,0,0,0,1},
+        {1,0,1,0,1,0,1,1,1,0,1,1,1,0,1,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,2,0,0,1},
+        {1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,5,0,1},
+        {1,0,1,1,0,1,5,1,0,1,1,0,1,1,0,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+    {   /* Zone B */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,1},
+        {1,0,1,0,1,0,1,1,1,0,1,1,1,0,5,1},
+        {1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1},
+        {1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,0,1,1,0,1,5,1,0,1,1,0,1,1,0,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+  },
+  { /* Level 5 - Chamber 3 (amber) */
+    {   /* Zone A */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,0,1,4,0,0,1,0,0,1},
+        {1,5,1,0,1,0,1,0,1,0,1,0,1,0,0,1},
+        {1,0,1,0,0,0,1,0,0,0,1,0,2,0,0,1},
+        {1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,0,1,5,1,0,1,1,0,5,1,0,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+    {   /* Zone B */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1},
-        {1,0,1,0,1,0,1,0,0,0,1,0,0,0,1,1},
-        {1,0,1,0,0,0,1,0,1,0,1,0,1,0,0,1},
-        {1,0,1,1,1,0,1,0,1,0,0,0,1,1,1,1},
-        {1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,1},
-        {1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1},
+        {1,5,1,0,1,0,1,0,1,0,1,0,1,0,5,1},
+        {1,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1},
+        {1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,1},
         {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,1,0,1,5,1,0,1,1,0,5,1,0,1,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 5 */
+  },
+  { /* Level 6 - Chamber 4 (blue) */
+    {   /* Zone A */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1},
-        {1,0,1,0,1,0,1,2,1,0,1,0,1,0,1,1},
-        {1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1},
-        {1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1},
+        {1,0,0,0,1,0,0,0,0,4,1,0,0,0,0,1},
+        {1,0,1,1,1,0,1,5,1,0,1,1,1,0,0,1},
+        {1,0,0,0,0,0,1,0,0,0,0,0,2,0,0,1},
+        {1,1,0,1,1,1,1,0,1,1,1,0,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1},
+        {1,0,1,5,0,1,1,0,1,0,1,1,0,5,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 6 */
+    {   /* Zone B */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1},
+        {1,0,1,1,1,0,1,5,1,0,1,1,1,0,5,1},
+        {1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,1},
+        {1,1,0,1,1,1,1,0,1,1,1,0,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1},
+        {1,0,1,5,0,1,1,0,1,0,1,1,0,5,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+  },
+  { /* Level 7 - Chamber 4 (blue) */
+    {   /* Zone A */
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+        {1,0,0,0,0,0,1,0,0,4,0,0,1,0,0,1},
+        {1,5,1,0,1,0,1,0,1,5,1,0,1,0,0,1},
+        {1,0,1,0,0,0,0,0,1,0,0,0,2,0,0,1},
+        {1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1},
+        {1,1,5,1,0,1,1,0,1,5,1,1,0,5,1,1},
+        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,1},
+        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    },
+    {   /* Zone B */
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
         {1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1},
-        {1,0,1,1,0,0,1,0,1,1,0,0,1,0,1,1},
-        {1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1},
-        {1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+        {1,5,1,0,1,0,1,0,1,5,1,0,1,0,5,1},
+        {1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1},
+        {1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1},
+        {1,0,0,0,0,0,0,0,0,0,5,0,0,0,0,1},
+        {1,1,5,1,0,1,1,0,1,5,1,1,0,5,1,1},
+        {1,6,0,0,0,0,0,0,0,0,0,0,0,0,3,1},
         {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     },
-    {   /* Level 7 */
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,1,1,0,0,1,1,1,0,0,1,1,1,1},
-        {1,0,1,0,1,0,0,1,0,1,0,0,1,2,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1},
-        {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-        {1,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1},
-        {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-    },
+  },
 };
+
+
 
 /* -----------------------------------------------------------------------
    Palette definitions
    ----------------------------------------------------------------------- */
 
-static void palettes_install(void)
+static void palettes_install(u8 level)
 {
-    /* Wall palette - warm sandy tones for level 0 */
-    SetPalette(SCR_1_PLANE, P_WALL,
-        RGB(0,0,0),
-        RGB(12,8,2),
-        RGB(10,6,2),
-        RGB(15,12,4));
+    u8 chamber;
+    chamber = (u8)(level >> 1);
 
-    /* Lock door palette */
+    /* ── SCR_1 wall palette varies per chamber ── */
+    if (chamber == 0) {
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(3,2,1), RGB(7,4,2), RGB(11,7,3), RGB(14,10,5));
+    } else if (chamber == 1) {
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(3,1,3), RGB(7,2,7), RGB(11,4,10), RGB(13,5,11));
+    } else if (chamber == 2) {
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(4,3,1), RGB(8,5,1), RGB(12,8,2), RGB(14,11,4));
+    } else {
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(1,1,4), RGB(3,2,7), RGB(5,3,10), RGB(7,4,12));
+    }
+
+    /* Hieroglyph walls - same warm gold tones */
     SetPalette(SCR_1_PLANE, P_LOCK,
-        RGB(0,0,0),
-        RGB(8,4,0),
-        RGB(12,8,0),
-        RGB(15,12,2));
+        RGB(3,2,0), RGB(5,3,1), RGB(14,10,5), RGB(15,15,9));
 
-    /* Key palette - gold */
+    /* Key - bright gold */
     SetPalette(SCR_1_PLANE, P_KEY,
-        RGB(0,0,0),
-        RGB(10,8,0),
-        RGB(14,12,0),
-        RGB(15,15,4));
+        RGB(0,0,0), RGB(14,10,5), RGB(15,15,9), RGB(15,15,15));
 
-    /* HUD palette - white text on black */
+    /* Teleport pad - blue glow */
+    SetPalette(SCR_1_PLANE, P_TELEPORT,
+        RGB(0,0,0), RGB(2,5,8), RGB(3,9,12), RGB(5,13,15));
+
+    /* Treasure diamond - cyan/blue */
+    SetPalette(SCR_1_PLANE, P_TREAS_DIAMOND,
+        RGB(0,0,0), RGB(2,7,8), RGB(5,12,13), RGB(15,15,15));
+
+    /* Treasure ruby - deep red */
+    SetPalette(SCR_1_PLANE, P_TREAS_RUBY,
+        RGB(0,0,0), RGB(5,3,1), RGB(12,5,4), RGB(15,8,6));
+
+    /* Treasure beetle - gold */
+    SetPalette(SCR_1_PLANE, P_TREAS_BEETLE,
+        RGB(0,0,0), RGB(9,6,3), RGB(15,13,7), RGB(15,15,9));
+
+    /* HUD - bright white text */
     SetPalette(SCR_2_PLANE, P_HUD,
-        RGB(0,0,0),
-        RGB(15,15,15),
-        RGB(12,12,0),
-        RGB(0,12,15));
+        RGB(0,0,0), RGB(5,5,5), RGB(10,10,10), RGB(15,15,4));
 
-    /* Player palette */
+    /* ── Sprite palettes ── */
+
+    /* Player - brown/gold explorer */
     SetPalette(SPRITE_PLANE, P_PLAYER,
-        0,
-        RGB(14,12,0),
-        RGB(15,15,15),
-        RGB(12,4,0));
+        0, RGB(9,6,3), RGB(14,10,5), RGB(15,15,15));
 
-    /* Title palette - black bg, red body, dark teal, light cyan */
-    SetPalette(SCR_1_PLANE, P_TITLE,
-        RGB(0,0,0),
-        RGB(11,3,3),
-        RGB(2,6,8),
-        RGB(7,12,14));
+    /* Bullet - yellow-orange in flight, cyan HUD via separate slot */
+    SetPalette(SPRITE_PLANE, P_BULLET,
+        0, RGB(12,5,4), RGB(15,13,7), RGB(15,15,9));
+
+    /* Enemy A - green/brown (scorpion, bug) */
+    SetPalette(SPRITE_PLANE, P_ENEMY_A,
+        0, RGB(4,5,5), RGB(5,12,13), RGB(15,15,15));
+
+    /* Enemy B - white/grey bandages (mummy + bird) */
+    SetPalette(SPRITE_PLANE, P_ENEMY_B,
+        0, RGB(5,4,3), RGB(10,9,8), RGB(15,15,15));
+}
+
+/* -----------------------------------------------------------------------
+   Arcade-accurate wall palette per chamber.
+   Arcade original: 4 chambers, each 2 levels.
+   Chamber 1 (L0-1): amber/orange
+   Chamber 2 (L2-3): cyan/teal
+   Chamber 3 (L4-5): magenta/pink
+   Chamber 4 (L6-7): green
+   ----------------------------------------------------------------------- */
+
+void maze_set_wall_palette(u8 level)
+{
+    u8 chamber;
+    chamber = (u8)(level >> 1);  /* 0-3 */
+
+    if (chamber == 0) {
+        /* Warm grey-brown - arcade stage 1/5/9 avg (148,130,119) */
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(0,0,0),
+            RGB(5,4,4),
+            RGB(9,8,7),
+            RGB(12,10,9));
+    } else if (chamber == 1) {
+        /* Pink-purple - arcade stage 2/6/10 avg (176,74,133) */
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(0,0,0),
+            RGB(5,2,4),
+            RGB(10,4,8),
+            RGB(13,6,11));
+    } else if (chamber == 2) {
+        /* Amber-gold - arcade stage 3/7 avg (152,107,30) */
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(0,0,0),
+            RGB(4,3,0),
+            RGB(9,6,2),
+            RGB(12,9,3));
+    } else {
+        /* Deep blue-purple - arcade stage 4/8/12 avg (63,29,133) */
+        SetPalette(SCR_1_PLANE, P_WALL,
+            RGB(0,0,0),
+            RGB(1,1,4),
+            RGB(4,2,8),
+            RGB(6,4,12));
+    }
 }
 
 /* -----------------------------------------------------------------------
@@ -398,7 +675,7 @@ void tiles_install(void)
 {
     InstallTileSetAt(
         (const unsigned short (*)[8])game_tiles,
-        56,     /* 7 tiles x 8 words */
+        672,    /* 84 tiles x 8 words */
         T_WALL);
 
     InstallTileSetAt(
@@ -406,44 +683,190 @@ void tiles_install(void)
         1760,   /* 220 tiles x 8 words */
         TITLE_TILE_START);
 
-    palettes_install();
+    palettes_install(g_level);
 
     SetBackgroundColour(RGB(0, 0, 0));
 }
 
+/* Draw a single logical cell as 2x2 tiles.
+   cell_override: pass 0xFF to use map value, or a CELL_* value to force. */
+void maze_draw_cell(u8 level, u8 col, u8 row)
+{
+    maze_draw_cell_zone(level, 0, col, row);
+}
+
+void maze_draw_cell_zone(u8 level, u8 zone, u8 col, u8 row)
+{
+    u8 cell;
+    u8 tc;
+    u8 tr;
+    cell = maze_map[level][zone][row][col];
+    tc = (u8)(col * 2);
+    tr = (u8)(row * 2 + 1);  /* +1 for HUD row */
+    if (cell == CELL_WALL) {
+        {
+            /* Vary wall: plain / hiero1 / hiero2 by position */
+            u16 wt;
+            if (((u8)(col + row)) % 11u == 0u) {
+                wt = T_HIERO2_TL;
+            } else if (((u8)(col + row)) % 7u == 0u) {
+                wt = T_HIERO1_TL;
+            } else {
+                wt = T_WALL_TL;
+            }
+            PutTile(SCR_1_PLANE, P_WALL, tc,   tr,   wt);
+            PutTile(SCR_1_PLANE, P_WALL, tc+1, tr,   (u16)(wt+1));
+            PutTile(SCR_1_PLANE, P_WALL, tc,   tr+1, (u16)(wt+2));
+            PutTile(SCR_1_PLANE, P_WALL, tc+1, tr+1, (u16)(wt+3));
+        }
+    } else if (cell == CELL_KEY) {
+        /* Key in alcove: arch top row, key tile bottom */
+        PutTile(SCR_1_PLANE, P_KEY,  tc,   tr,   T_KEY_TL);
+        PutTile(SCR_1_PLANE, P_KEY,  tc+1, tr,   T_KEY_TR);
+        PutTile(SCR_1_PLANE, P_KEY,  tc,   tr+1, T_KEY_BL);
+        PutTile(SCR_1_PLANE, P_KEY,  tc+1, tr+1, T_KEY_BR);
+    } else if (cell == CELL_DOOR) {
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr,   T_DOOR_TL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr,   T_DOOR_TR);
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr+1, T_DOOR_BL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr+1, T_DOOR_BR);
+    } else if (cell == CELL_TREASURE) {
+        u16 trt;
+        u8 tpal;
+        trt = maze_treasure_tile(level);
+        tpal = maze_treasure_pal(level);
+            PutTile(SCR_1_PLANE, tpal, tc,   tr,   trt);
+            PutTile(SCR_1_PLANE, tpal, tc+1, tr,   (u16)(trt+1));
+            PutTile(SCR_1_PLANE, tpal, tc,   tr+1, (u16)(trt+2));
+            PutTile(SCR_1_PLANE, tpal, tc+1, tr+1, (u16)(trt+3));
+    } else if (cell == CELL_GENERATOR) {
+        /* Generator: alcove arch - 4-tile 16x16 sprite */
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr,   T_ALCOVE_TL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr,   T_ALCOVE_TR);
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr+1, T_ALCOVE_BL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr+1, T_ALCOVE_BR);
+    } else if (cell == CELL_TELEPORT) {
+        /* Teleport pad: smoke-6 scattered dots tinted blue */
+        PutTile(SCR_1_PLANE, P_TELEPORT, tc,   tr,   T_TELEPORT);
+        PutTile(SCR_1_PLANE, P_TELEPORT, tc+1, tr,   T_TELEPORT);
+        PutTile(SCR_1_PLANE, P_TELEPORT, tc,   tr+1, T_TELEPORT);
+        PutTile(SCR_1_PLANE, P_TELEPORT, tc+1, tr+1, T_TELEPORT);
+    } else {
+        PutTile(SCR_1_PLANE, 0, tc,   tr,   0);
+        PutTile(SCR_1_PLANE, 0, tc+1, tr,   0);
+        PutTile(SCR_1_PLANE, 0, tc,   tr+1, 0);
+        PutTile(SCR_1_PLANE, 0, tc+1, tr+1, 0);
+    }
+}
+
+/* Draw a cell using an explicit cell value - used by game.c to draw
+   floor over a collected key or opened door without mutating const map */
+void maze_draw_cell_as(u8 col, u8 row, u8 cell)
+{
+    u8 tc;
+    u8 tr;
+    tc = (u8)(col * 2);
+    tr = (u8)(row * 2 + 1);
+    if (cell == CELL_WALL) {
+        {
+            /* Vary wall: plain / hiero1 / hiero2 by position */
+            u16 wt;
+            if (((u8)(col + row)) % 11u == 0u) {
+                wt = T_HIERO2_TL;
+            } else if (((u8)(col + row)) % 7u == 0u) {
+                wt = T_HIERO1_TL;
+            } else {
+                wt = T_WALL_TL;
+            }
+            PutTile(SCR_1_PLANE, P_WALL, tc,   tr,   wt);
+            PutTile(SCR_1_PLANE, P_WALL, tc+1, tr,   (u16)(wt+1));
+            PutTile(SCR_1_PLANE, P_WALL, tc,   tr+1, (u16)(wt+2));
+            PutTile(SCR_1_PLANE, P_WALL, tc+1, tr+1, (u16)(wt+3));
+        }
+    } else if (cell == CELL_KEY) {
+        /* Key in alcove: arch top row, key tile bottom */
+        PutTile(SCR_1_PLANE, P_KEY,  tc,   tr,   T_KEY_TL);
+        PutTile(SCR_1_PLANE, P_KEY,  tc+1, tr,   T_KEY_TR);
+        PutTile(SCR_1_PLANE, P_KEY,  tc,   tr+1, T_KEY_BL);
+        PutTile(SCR_1_PLANE, P_KEY,  tc+1, tr+1, T_KEY_BR);
+    } else if (cell == CELL_DOOR) {
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr,   T_DOOR_TL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr,   T_DOOR_TR);
+        PutTile(SCR_1_PLANE, P_WALL, tc,   tr+1, T_DOOR_BL);
+        PutTile(SCR_1_PLANE, P_WALL, tc+1, tr+1, T_DOOR_BR);
+    } else {
+        /* CELL_FLOOR and everything else: draw black floor */
+        /* maze_draw_cell_as is only called with CELL_FLOOR in practice */
+        PutTile(SCR_1_PLANE, 0, tc,   tr,   0);
+        PutTile(SCR_1_PLANE, 0, tc+1, tr,   0);
+        PutTile(SCR_1_PLANE, 0, tc,   tr+1, 0);
+        PutTile(SCR_1_PLANE, 0, tc+1, tr+1, 0);
+    }
+}
+
 void maze_draw(u8 level)
+{
+    maze_draw_zone(level, 0);
+}
+
+void maze_draw_zone(u8 level, u8 zone)
 {
     u8 row;
     u8 col;
-    u8 cell;
-
-    /* Each logical cell = 2x2 tiles (16x16px).
-       Maze is 16 cols x 9 rows = 32x18 tile columns/rows.
-       Tile row 0 = HUD (SCR_2). Maze starts at tile row 1.
-       Two tile rows per logical row: row*2+1 and row*2+2. */
-    for (row = 0; row < 9; row++) {
-        for (col = 0; col < 16; col++) {
-            cell = maze_map[level][row][col];
-            if (cell == 1) {
-                PutTile(SCR_1_PLANE, P_WALL, col*2,   row*2+1, T_WALL);
-                PutTile(SCR_1_PLANE, P_WALL, col*2+1, row*2+1, T_WALL);
-                PutTile(SCR_1_PLANE, P_WALL, col*2,   row*2+2, T_WALL);
-                PutTile(SCR_1_PLANE, P_WALL, col*2+1, row*2+2, T_WALL);
-            } else if (cell == 2) {
-                PutTile(SCR_1_PLANE, P_KEY, col*2,   row*2+1, T_KEY);
-                PutTile(SCR_1_PLANE, P_KEY, col*2+1, row*2+1, T_KEY);
-                PutTile(SCR_1_PLANE, P_KEY, col*2,   row*2+2, T_KEY);
-                PutTile(SCR_1_PLANE, P_KEY, col*2+1, row*2+2, T_KEY);
-            } else {
-                PutTile(SCR_1_PLANE, 0, col*2,   row*2+1, 0);
-                PutTile(SCR_1_PLANE, 0, col*2+1, row*2+1, 0);
-                PutTile(SCR_1_PLANE, 0, col*2,   row*2+2, 0);
-                PutTile(SCR_1_PLANE, 0, col*2+1, row*2+2, 0);
-            }
+    for (row = 0; row < MAZE_ROWS; row++) {
+        for (col = 0; col < MAZE_COLS; col++) {
+            maze_draw_cell_zone(level, zone, col, row);
         }
     }
 }
 void maze_set_scroll_px(u8 px)
 {
     SCR1_X = px;
+}
+
+/* -----------------------------------------------------------------------
+   Wall collision query.
+   Takes logical cell coords (0..MAZE_COLS-1, 0..MAZE_ROWS-1).
+   Returns 1 if wall or out of bounds, 0 if passable.
+   ----------------------------------------------------------------------- */
+
+u8 maze_cell_get(u8 level, u8 col, u8 row)
+{
+    return maze_cell_get_zone(level, 0, col, row);
+}
+
+u8 maze_cell_get_zone(u8 level, u8 zone, u8 col, u8 row)
+{
+    u8 cell;
+    if (col >= MAZE_COLS) return CELL_WALL;
+    if (row >= MAZE_ROWS) return CELL_WALL;
+    cell = maze_map[level][zone][row][col];
+    if (cell == CELL_GENERATOR) return CELL_WALL;
+    return cell;
+}
+
+u8 maze_cell_raw(u8 level, u8 zone, u8 col, u8 row)
+{
+    if (col >= MAZE_COLS) return CELL_WALL;
+    if (row >= MAZE_ROWS) return CELL_WALL;
+    return maze_map[level][zone][row][col];
+}
+
+/* Returns the correct treasure tile for the given level (2 levels per chamber) */
+u16 maze_treasure_tile(u8 level)
+{
+    u8 chamber;
+    chamber = (u8)(level >> 1);
+    if (chamber == 0) return T_DIAMOND_TL;
+    if (chamber == 1) return T_SCARAB_TL;
+    return T_RUBY_TL;
+}
+
+u8 maze_treasure_pal(u8 level)
+{
+    u8 chamber;
+    chamber = (u8)(level >> 1);
+    if (chamber == 0) return P_TREAS_DIAMOND;
+    if (chamber == 1) return P_TREAS_BEETLE;
+    return P_TREAS_RUBY;
 }

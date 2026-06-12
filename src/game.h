@@ -29,7 +29,30 @@
    Game constants
    ----------------------------------------------------------------------- */
 
-#define SCROLL_MAX    96
+#define MAX_LIVES        3
+#define MAX_BULLETS      6
+#define MAX_ENEMIES      4
+
+#define MAZE_LEVELS      8
+#define MAZE_ZONES       2
+#define MAZE_ROWS        9
+#define MAZE_COLS        16
+
+/* Cell types */
+#define CELL_FLOOR       0
+#define CELL_WALL        1
+#define CELL_KEY         2
+#define CELL_DOOR        3
+#define CELL_TREASURE    4
+#define CELL_GENERATOR   5
+#define CELL_TELEPORT    6
+
+/* Title screen bitmap */
+#define TITLE_TILE_START 300
+#define TITLE_TILES_W    20
+#define TITLE_TILES_H    11
+
+#define SCROLL_MAX    96   /* (16-10) cells x 16px */
 #define SCROLL_SPEED   2
 
 /* -----------------------------------------------------------------------

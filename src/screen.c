@@ -14,6 +14,12 @@ void screen_draw_title(void)
     /* Reinstall tiles and font after ClearScreen (Asteroids pattern) */
     SysSetSystemFont();
     tiles_install();
+    /* Restore title palette - tiles_install sets slot 3 to teleport blue */
+    SetPalette(SCR_1_PLANE, P_TITLE,
+        RGB(0,0,0),
+        RGB(11,3,3),
+        RGB(2,6,8),
+        RGB(7,12,14));
 
     for (ty = 0; ty < TITLE_TILES_H; ty++) {
         for (tx = 0; tx < TITLE_TILES_W; tx++) {
@@ -23,7 +29,7 @@ void screen_draw_title(void)
     }
 
     PrintString(SCR_2_PLANE, P_HUD, 4, 15, "PRESS START");
-    PrintString(SCR_2_PLANE, P_HUD, 1, 17, "STUDIO SO NOT KANSAI");
+//    PrintString(SCR_2_PLANE, P_HUD, 1, 17, "STUDIO SO NOT KANSAI");
 
     s_blink_timer = 0;
     s_blink_on    = 1;
@@ -66,8 +72,8 @@ void screen_draw_select(u8 cursor)
     names[7] = "LEVEL 8";
     names[8] = "SCROLL TEST";
 
-    ClearScreen(SCR_2_PLANE);
-    /* No SysSetSystemFont here - font already live from boot/tiles_install */
+    ClearScreen(SCR_1_PLANE);
+    SysSetSystemFont();
 
     PrintString(SCR_2_PLANE, P_HUD, 5, 1, "SELECT LEVEL");
 
@@ -89,7 +95,7 @@ void screen_draw_hud(u8 level)
 
     buf[0] = 'S'; buf[1] = 'T'; buf[2] = 'A';
     buf[3] = 'G'; buf[4] = 'E'; buf[5] = ':';
-    buf[6] = '1' + level; buf[7] = 0;
+    buf[6] = (u8)('1' + level); buf[7] = 0;
     PrintString(SCR_2_PLANE, P_HUD, 0, 0, buf);
     PrintString(SCR_2_PLANE, P_HUD, 14, 0, "KEY:?");
 }
