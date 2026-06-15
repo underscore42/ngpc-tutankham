@@ -137,8 +137,8 @@ static void update_intermission(void)
 
     /* After 600 frames (~10s) loop back to level 1 */
     if (s_intro_tick > 600) {
-        game_init();
         s_looped = 1;
+        game_init();
         enter_game(0);
         return;
     }
@@ -186,7 +186,7 @@ static void update_intermission(void)
         u8 eflips[5];
         /* needs_flip: 1 = sprite faces left natively, flip to face right */
         etypes[0] = T_MUMMY_TL;    epals[0] = P_ENEMY_B;  eflips[0] = 1;
-        etypes[1] = T_BIRD_TL;     epals[1] = P_ENEMY_B;  eflips[1] = 0;
+        etypes[1] = T_BIRD_TL;     epals[1] = P_ENEMY_B;  eflips[1] = 1;
         etypes[2] = T_BUG_TL;      epals[2] = P_ENEMY_A;  eflips[2] = 0;
         etypes[3] = T_SNAKE_TL;    epals[3] = P_BULLET;   eflips[3] = 0;
         etypes[4] = T_SCORPION_TL; epals[4] = P_ENEMY_A;  eflips[4] = 1;
@@ -285,6 +285,7 @@ static void update_title(void)
         }
     }
     if (s_pad_press != 0 && s_konami_step == 0) {
+        s_looped = 0;
         game_init();
         enter_game(0);
     }
@@ -1023,7 +1024,7 @@ void game_init(void)
     s_move_dir           = 0;
     s_move_timer         = 0;
     s_konami_step        = 0;
-    s_looped             = 0;
+    /* s_looped managed externally - set before game_init on loop */
     s_intro_tick         = 0;
     s_intro_px           = 0;
     s_intro_walk         = 0;
