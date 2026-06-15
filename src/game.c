@@ -19,10 +19,16 @@ static u8 s_player_ty;
 static u8 s_player_facing;   /* 0=right 1=left */
 static u8 s_walk_frame;       /* 0=frame1 1=frame2, toggles each step */
 static u8 s_key_collected;
-static u8 s_treasure_collected;
 static u16 s_score;
 static u16 s_hi_score;       /* persists across games */
 static u8  s_konami_step;     /* Konami code progress 0-9 */
+
+/* Intermission state */
+static u16 s_intro_tick;      /* frame counter */
+static u8  s_intro_px;        /* player x pixel position */
+static u8  s_intro_walk;      /* walk frame toggle */
+static u8  s_intro_wtimer;    /* walk animation timer */
+static u8  s_looped;          /* set after completing all 8 levels */
 static u8 s_lives;
 static u8 s_bullets;         /* remaining shots 0-6 */
 static u8 s_reloading;       /* reload animation timer */
@@ -33,7 +39,11 @@ static u8 s_move_timer;
 
 /* Per-level collected state */
 static u8 s_key_done[MAZE_LEVELS];
-static u8 s_treasure_done[MAZE_LEVELS];
+/* Per-level treasure tracking - up to 4 per level */
+static u8 s_treas_count[MAZE_LEVELS];      /* how many treasures found in map */
+static u8 s_treas_tx[MAZE_LEVELS][4];      /* treasure col positions */
+static u8 s_treas_ty[MAZE_LEVELS][4];      /* treasure row positions */
+static u8 s_treas_done[MAZE_LEVELS];       /* bitmask: bit N = treasure N collected */
 
 /* Bullet sprites: 4 sprite slots per bullet, 3 bullets max on screen */
 /* Slots 4-15 reserved for bullets (3 x 4 slots each) */
@@ -43,95 +53,197 @@ static u8  s_blt_ty[3];
 static u8  s_blt_dir[3];  /* 0=right 1=left */
 
 static void enter_title(void);
+static void enter_intermission(void);
+static void update_intermission(void);
 static void enter_select(void);
 static void enter_game(u8 level);
 static void enter_scroll_test(void);
 
-static void update_title(void);
-static void update_select(void);
-static void update_game(void);
-static void update_scroll_test(void);
-static void draw_player(void);
-static void hud_update(void);
-static void hud_draw_bottom(void);
-static void redraw_collected(void);
-static void update_generators(void);
-static void fire_bullet(void);
-static void update_bullets(void);
-static void draw_bullets(void);
-
 /* -----------------------------------------------------------------------
-   Init
+   INTERMISSION - chase sequence after completing all 8 levels
+   32x32 Tut mask top-centre, player chased by all 5 enemy types
+   Loops until animation completes then restarts game from level 1
    ----------------------------------------------------------------------- */
 
-void game_init(void)
+static void enter_intermission(void)
 {
     u8 i;
-    s_zone               = 0;
-    s_pad_cur            = 0;
-    s_pad_prev           = 0;
-    s_pad_press          = 0;
-    s_scroll_px          = 0;
-    s_select_cursor      = 0;
-    s_player_tx          = 1;
-    s_player_ty          = 1;
-    s_player_facing      = 0;
-    s_walk_frame         = 0;
-    s_key_collected      = 0;
-    s_treasure_collected = 0;
-    s_score              = 0;
-    s_lives              = MAX_LIVES;
-    s_konami_step        = 0;
-    s_bullets            = MAX_BULLETS;
-    s_reloading          = 0;
-    s_blt_timer          = 0;
-    s_smoke_tick         = 0;
-    s_move_dir           = 0;
-    s_move_timer         = 0;
-    for (i = 0; i < MAZE_LEVELS; i++) {
-        s_key_done[i]      = 0;
-        s_treasure_done[i] = 0;
+
+    if (s_score > s_hi_score) s_hi_score = s_score;
+
+    g_state = STATE_INTERMISSION;
+    s_intro_tick   = 0;
+    s_intro_px     = 0;
+    s_intro_walk   = 0;
+    s_intro_wtimer = 0;
+
+    for (i = 0; i < 64; i++) UnsetSprite(i);
+    ClearScreen(SCR_1_PLANE);
+    ClearScreen(SCR_2_PLANE);
+    SysSetSystemFont();
+    tiles_install();
+    SCR1_X = 0;
+
+    /* Draw Tut mask centred in top half - tile rows 2-5 (32px tall) */
+    /* Tut mask 32x32 = 4x4 tiles stored in tut_mask_32[16][8] */
+    /* Install into a high VRAM region - use tile ID 232 onwards */
+    InstallTileSetAt(
+        (const unsigned short (*)[8])tut_mask_32,
+        128,   /* 16 tiles x 8 words */
+        232);
+
+    /* Gold palette for Tut mask */
+    SetPalette(SCR_1_PLANE, P_WALL,
+        RGB(3,2,0), RGB(8,5,0), RGB(13,9,1), RGB(15,13,3));
+
+    /* Draw the 4x4 tut mask grid centred: cols 8-11, rows 2-5 */
+    {
+        u8 tr;
+        u8 tc;
+        for (tr = 0; tr < 4; tr++) {
+            for (tc = 0; tc < 4; tc++) {
+                PutTile(SCR_1_PLANE, P_WALL,
+                    (u8)(8 + tc), (u8)(2 + tr),
+                    (u16)(232 + tr * 4 + tc));
+            }
+        }
     }
-    for (i = 0; i < 3; i++) {
-        s_blt_active[i] = 0;
+
+    /* Score display */
+    {
+        char buf[6];
+        buf[0] = (u8)('0' + (s_score / 1000) % 10);
+        buf[1] = (u8)('0' + (s_score / 100)  % 10);
+        buf[2] = (u8)('0' + (s_score / 10)   % 10);
+        buf[3] = (u8)('0' +  s_score         % 10);
+        buf[4] = 0;
+        PrintString(SCR_2_PLANE, P_HUD, 1, 7, "SCORE:");
+        PrintString(SCR_2_PLANE, P_HUD, 8, 7, buf);
+        PrintString(SCR_2_PLANE, P_HUD, 2, 8, "LEVEL COMPLETE!");
     }
-    enter_title();
+
+    sfx_play(SFX_TELEPORT);  /* placeholder for chase music trigger */
 }
 
-void game_update(void)
+static void update_intermission(void)
 {
-    s_pad_prev  = s_pad_cur;
-    s_pad_cur   = (u8)(JOYPAD & 0x7F);
-    s_pad_press = (u8)(s_pad_cur & (~s_pad_prev));
+    u8 px;
+    u8 py;
+    u8 ex;
+    u8 tl;
+    u8 i;
 
-    if (g_state == STATE_TITLE) {
-        update_title();
-    } else if (g_state == STATE_SELECT) {
-        update_select();
-    } else if (g_state == STATE_GAME) {
-        update_game();
-    } else if (g_state == STATE_SCROLL) {
-        update_scroll_test();
+    s_intro_tick++;
+
+    /* After 600 frames (~10s) loop back to level 1 */
+    if (s_intro_tick > 600) {
+        game_init();
+        s_looped = 1;
+        enter_game(0);
+        return;
+    }
+
+    /* Walk animation */
+    s_intro_wtimer++;
+    if (s_intro_wtimer >= 8) {
+        s_intro_wtimer = 0;
+        s_intro_walk   = (u8)(1 - s_intro_walk);
+    }
+
+    /* Move player left->right across bottom half of screen */
+    /* Reset and loop */
+    if (s_intro_tick % 2 == 0) {
+        s_intro_px++;
+    }
+    if (s_intro_px > 200) {
+        s_intro_px = 0;
+    }
+
+    /* Player sprite at row 11 (bottom half), scrolling x */
+    py = 88;  /* pixel y = row 11 x 8px */
+    px = s_intro_px;
+
+    /* Draw player */
+    if (s_intro_walk == 0) {
+        tl = T_PLAY_TL;
+    } else {
+        tl = T_PLAY2_TL;
+    }
+    SetSprite(0, tl,          0, px,     py,     P_PLAYER);
+    SetSprite(1, (u8)(tl+1),  0, px+8,   py,     P_PLAYER);
+    SetSprite(2, (u8)(tl+2),  0, px,     py+8,   P_PLAYER);
+    SetSprite(3, (u8)(tl+3),  0, px+8,   py+8,   P_PLAYER);
+    SpriteControl(0, SPR_FRONT, 0);
+    SpriteControl(1, SPR_FRONT, 0);
+    SpriteControl(2, SPR_FRONT, 0);
+    SpriteControl(3, SPR_FRONT, 0);
+
+    /* 5 enemies chasing: scorpion, snake, bug, bird, mummy */
+    /* Spaced 3 sprites (48px) apart behind player */
+    {
+        u8 etypes[5];
+        u8 epals[5];
+        u8 eflips[5];
+        /* needs_flip: 1 = sprite faces left natively, flip to face right */
+        etypes[0] = T_MUMMY_TL;    epals[0] = P_ENEMY_B;  eflips[0] = 1;
+        etypes[1] = T_BIRD_TL;     epals[1] = P_ENEMY_B;  eflips[1] = 0;
+        etypes[2] = T_BUG_TL;      epals[2] = P_ENEMY_A;  eflips[2] = 0;
+        etypes[3] = T_SNAKE_TL;    epals[3] = P_BULLET;   eflips[3] = 0;
+        etypes[4] = T_SCORPION_TL; epals[4] = P_ENEMY_A;  eflips[4] = 1;
+
+        {
+            u8 base;
+            u8 etl;
+            u8 epal;
+            i = 0;
+            for (; i < 5; i++) {
+            /* Player gap = 48px (3 sprites), enemies 16px (1 sprite) apart */
+            if (px < (u8)(48 + i * 16)) {
+                ex = (u8)(px + 208 - i * 16);  /* wrap around */
+            } else {
+                ex = (u8)(px - 48 - i * 16);
+            }
+            base = (u8)(4 + i * 4);
+            etl  = etypes[i];
+            epal = epals[i];
+            if (eflips[i]) {
+                /* face right by swapping TL<->TR, BL<->BR + HFLIP */
+                SetSprite(base,         (u8)(etl+1), 0, ex,    py,   epal);
+                SetSprite((u8)(base+1), etl,         0, ex+8,  py,   epal);
+                SetSprite((u8)(base+2), (u8)(etl+3), 0, ex,    py+8, epal);
+                SetSprite((u8)(base+3), (u8)(etl+2), 0, ex+8,  py+8, epal);
+                SpriteControl(base,         SPR_FRONT, SPR_HFLIP);
+                SpriteControl((u8)(base+1), SPR_FRONT, SPR_HFLIP);
+                SpriteControl((u8)(base+2), SPR_FRONT, SPR_HFLIP);
+                SpriteControl((u8)(base+3), SPR_FRONT, SPR_HFLIP);
+            } else {
+                SetSprite(base,         etl,          0, ex,    py,   epal);
+                SetSprite((u8)(base+1), (u8)(etl+1),  0, ex+8,  py,   epal);
+                SetSprite((u8)(base+2), (u8)(etl+2),  0, ex,    py+8, epal);
+                SetSprite((u8)(base+3), (u8)(etl+3),  0, ex+8,  py+8, epal);
+                SpriteControl(base,         SPR_FRONT, 0);
+                SpriteControl((u8)(base+1), SPR_FRONT, 0);
+                SpriteControl((u8)(base+2), SPR_FRONT, 0);
+                SpriteControl((u8)(base+3), SPR_FRONT, 0);
+            }
+            }
+        }
     }
 }
-
-/* -----------------------------------------------------------------------
-   TITLE
-   ----------------------------------------------------------------------- */
 
 static void enter_title(void)
 {
     u8 i;
     g_state = STATE_TITLE;
     for (i = 0; i < 64; i++) UnsetSprite(i);
-    /* Clear entire SCR_2 to remove stray HUD tiles */
+    /* Clear stray HUD tiles from previous game */
     ClearScreen(SCR_2_PLANE);
     SysSetSystemFont();
     screen_draw_title();
     SCR1_X = 0;
     /* Show hi score on title */
     {
-        char buf[8];
+        char buf[5];
         buf[0] = (u8)('0' + (s_hi_score / 1000) % 10);
         buf[1] = (u8)('0' + (s_hi_score / 100)  % 10);
         buf[2] = (u8)('0' + (s_hi_score / 10)   % 10);
@@ -140,48 +252,6 @@ static void enter_title(void)
         PrintString(SCR_2_PLANE, P_HUD, 6, 17, "HI:");
         PrintString(SCR_2_PLANE, P_HUD, 10, 17, buf);
     }
-}
-
-static void enter_victory(void)
-{
-    u8 i;
-    u8 tx;
-    u8 ty;
-    u8 tile_idx;
-
-    g_state = STATE_TITLE;  /* Reuse title state for now */
-
-    for (i = 0; i < 64; i++) UnsetSprite(i);
-    ClearScreen(SCR_1_PLANE);
-    ClearScreen(SCR_2_PLANE);
-    SysSetSystemFont();
-
-    /* Draw 32x32 Tut mask centred - bottom right of cleared maze */
-    /* 32x32px = 4x4 tiles, centred at tile col 10 row 7 */
-    for (ty = 0; ty < 4; ty++) {
-        for (tx = 0; tx < 4; tx++) {
-            tile_idx = (u8)(ty * 4 + tx);
-            PutTile(SCR_1_PLANE, P_WALL, (u8)(8 + tx), (u8)(5 + ty),
-                    (u16)(148 + tile_idx));  /* placeholder - real draw via InstallTileSet */
-        }
-    }
-
-    if (s_score > s_hi_score) s_hi_score = s_score;
-    PrintString(SCR_2_PLANE, P_HUD, 2,  1, "CONGRATULATIONS!");
-    PrintString(SCR_2_PLANE, P_HUD, 3,  3, "YOU HAVE ESCAPED");
-    PrintString(SCR_2_PLANE, P_HUD, 4,  4, "THE TOMB OF");
-    PrintString(SCR_2_PLANE, P_HUD, 3,  5, "TUTANKHAM!");
-    {
-        char vbuf[8];
-        vbuf[0]=(u8)('0'+(s_score/1000)%10);
-        vbuf[1]=(u8)('0'+(s_score/100)%10);
-        vbuf[2]=(u8)('0'+(s_score/10)%10);
-        vbuf[3]=(u8)('0'+s_score%10);
-        vbuf[4]=0;
-        PrintString(SCR_2_PLANE, P_HUD, 2, 12, "SCORE:");
-        PrintString(SCR_2_PLANE, P_HUD, 9, 12, vbuf);
-    }
-    PrintString(SCR_2_PLANE, P_HUD, 3, 14, "PRESS START");
 }
 
 static void update_title(void)
@@ -278,7 +348,7 @@ static void enter_game(u8 level)
     s_scroll_px          = 0;
     s_zone               = 0;
     s_key_collected      = s_key_done[level];
-    s_treasure_collected = s_treasure_done[level];
+    /* treasure_collected state handled per-cell via s_treas_done bitmask */
     s_player_tx          = 1;
     s_player_ty          = 7;
     s_player_facing      = 0;
@@ -319,9 +389,9 @@ static void hud_update(void)
 {
     char buf[6];
 
-    /* T:X (cols 0-2) */
+    /* T:X (cols 0-2) - offset by 8 after first loop */
     buf[0] = 'T'; buf[1] = ':';
-    buf[2] = (u8)('1' + g_level); buf[3] = 0;
+    buf[2] = (u8)('1' + g_level + (u8)(s_looped ? 8u : 0u)); buf[3] = 0;
     PrintString(SCR_2_PLANE, P_HUD, 0, 0, buf);
 
     /* 4-digit score (cols 4-7) */
@@ -372,6 +442,7 @@ static void redraw_collected(void)
 {
     u8 rr;
     u8 cc;
+    u8 ti;
     if (s_key_done[g_level]) {
         for (rr = 0; rr < MAZE_ROWS; rr++) {
             for (cc = 0; cc < MAZE_COLS; cc++) {
@@ -381,13 +452,12 @@ static void redraw_collected(void)
             }
         }
     }
-    if (s_treasure_done[g_level]) {
-        for (rr = 0; rr < MAZE_ROWS; rr++) {
-            for (cc = 0; cc < MAZE_COLS; cc++) {
-                if (maze_cell_get_zone(g_level, s_zone, cc, rr) == CELL_TREASURE) {
-                    maze_draw_cell_as(cc, rr, CELL_FLOOR);
-                }
-            }
+    ti = 0;
+    for (; ti < s_treas_count[g_level]; ti++) {
+        if (s_treas_done[g_level] & (u8)(1 << ti)) {
+            cc = s_treas_tx[g_level][ti];
+            rr = s_treas_ty[g_level][ti];
+            maze_draw_cell_as(cc, rr, CELL_FLOOR);
         }
     }
 }
@@ -506,7 +576,18 @@ static void update_game(void)
     cell = maze_cell_get_zone(g_level, s_zone, new_tx, new_ty);
 
     if (cell == CELL_KEY      && s_key_done[g_level])      cell = CELL_FLOOR;
-    if (cell == CELL_TREASURE && s_treasure_done[g_level]) cell = CELL_FLOOR;
+    /* Treat collected treasures as floor */
+    if (cell == CELL_TREASURE) {
+        u8 ti;
+        ti = 0;
+        for (; ti < s_treas_count[g_level]; ti++) {
+            if (s_treas_tx[g_level][ti] == new_tx &&
+                s_treas_ty[g_level][ti] == new_ty &&
+                (s_treas_done[g_level] & (u8)(1 << ti))) {
+                cell = CELL_FLOOR;
+            }
+        }
+    }
 
     if (cell == CELL_TELEPORT) {
         u8 player_px;
@@ -551,9 +632,18 @@ static void update_game(void)
             maze_draw_cell_as(new_tx, new_ty, CELL_FLOOR);
             s_score = (u16)(s_score + 100);
             hud_update();
-        } else if (cell == CELL_TREASURE && !s_treasure_collected) {
-            s_treasure_collected       = 1;
-            s_treasure_done[g_level]   = 1;
+        } else if (cell == CELL_TREASURE) {
+            {
+                u8 ti;
+                ti = 0;
+                for (; ti < s_treas_count[g_level]; ti++) {
+                    if (s_treas_tx[g_level][ti] == new_tx &&
+                        s_treas_ty[g_level][ti] == new_ty &&
+                        !(s_treas_done[g_level] & (u8)(1 << ti))) {
+                        s_treas_done[g_level] |= (u8)(1 << ti);
+                    }
+                }
+            }
             maze_draw_cell_as(new_tx, new_ty, CELL_FLOOR);
             s_score = (u16)(s_score + 500);
             hud_update();
@@ -561,16 +651,12 @@ static void update_game(void)
             if (!s_key_collected) {
                 return;
             }
-            if (g_level < MAZE_LEVELS - 1) {
-                s_score = (u16)(s_score + 1000);
-                sfx_play(SFX_TOMB_ENTER);
-                if (g_level >= MAZE_LEVELS - 1) {
-                    enter_victory();
-                    return;
-                }
-                enter_game((u8)(g_level + 1));
+            s_score = (u16)(s_score + 1000);
+            sfx_play(SFX_TOMB_ENTER);
+            if (g_level >= MAZE_LEVELS - 1) {
+                enter_intermission();
             } else {
-                enter_title();
+                enter_game((u8)(g_level + 1));
             }
             return;
         }
@@ -902,4 +988,89 @@ static void draw_player(void)
             SpriteControl(3, SPR_FRONT, 0);
         }
     }
+}
+
+/* -----------------------------------------------------------------------
+   Public entry points called from main.c
+   ----------------------------------------------------------------------- */
+
+void game_init(void)
+{
+    u8 i;
+    u8 lv;
+    u8 co;
+    u8 ro;
+
+    g_state              = STATE_TITLE;
+    g_level              = 0;
+    s_zone               = 0;
+    s_pad_cur            = 0;
+    s_pad_prev           = 0;
+    s_pad_press          = 0;
+    s_scroll_px          = 0;
+    s_select_cursor      = 0;
+    s_player_tx          = 1;
+    s_player_ty          = 7;
+    s_player_facing      = 0;
+    s_walk_frame         = 0;
+    s_key_collected      = 0;
+    if (!s_looped) { s_score = 0; }
+    s_lives              = MAX_LIVES;
+    s_bullets            = MAX_BULLETS;
+    s_reloading          = 0;
+    s_blt_timer          = 0;
+    s_smoke_tick         = 0;
+    s_move_dir           = 0;
+    s_move_timer         = 0;
+    s_konami_step        = 0;
+    s_looped             = 0;
+    s_intro_tick         = 0;
+    s_intro_px           = 0;
+    s_intro_walk         = 0;
+    s_intro_wtimer       = 0;
+
+    for (i = 0; i < MAZE_LEVELS; i++) {
+        s_key_done[i]     = 0;
+        s_treas_done[i]   = 0;
+        s_treas_count[i]  = 0;
+    }
+    for (i = 0; i < 3; i++) {
+        s_blt_active[i]   = 0;
+        s_blt_tx[i]       = 0;
+        s_blt_ty[i]       = 0;
+        s_blt_dir[i]      = 0;
+    }
+
+    /* Scan maps for treasure positions */
+    lv = 0;
+    for (; lv < MAZE_LEVELS; lv++) {
+        s_treas_count[lv] = 0;
+        ro = 0;
+        for (; ro < MAZE_ROWS; ro++) {
+            co = 0;
+            for (; co < MAZE_COLS; co++) {
+                if (maze_cell_raw(lv, 0, co, ro) == CELL_TREASURE &&
+                    s_treas_count[lv] < 4) {
+                    s_treas_tx[lv][s_treas_count[lv]] = co;
+                    s_treas_ty[lv][s_treas_count[lv]] = ro;
+                    s_treas_count[lv]++;
+                }
+            }
+        }
+    }
+
+    enter_title();
+}
+
+void game_update(void)
+{
+    s_pad_prev  = s_pad_cur;
+    s_pad_cur   = (u8)(JOYPAD & 0x7F);
+    s_pad_press = (u8)(s_pad_cur & ~s_pad_prev);
+
+    if      (g_state == STATE_TITLE)       { update_title(); }
+    else if (g_state == STATE_SELECT)      { update_select(); }
+    else if (g_state == STATE_GAME)        { update_game(); }
+    else if (g_state == STATE_SCROLL)      { update_scroll_test(); }
+    else if (g_state == STATE_INTERMISSION){ update_intermission(); }
 }

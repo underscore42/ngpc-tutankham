@@ -11,7 +11,8 @@
 #define STATE_TITLE   0
 #define STATE_SELECT  1
 #define STATE_GAME    2
-#define STATE_SCROLL  3
+#define STATE_SCROLL       3
+#define STATE_INTERMISSION 4
 
 /* -----------------------------------------------------------------------
    Input button masks
@@ -61,6 +62,7 @@
 
 extern u8 g_state;
 extern u8 g_level;
+extern const unsigned short tut_mask_32[16][8];
 
 /* -----------------------------------------------------------------------
    Functions
