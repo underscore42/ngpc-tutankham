@@ -52,6 +52,8 @@ static u8  s_blt_tx[3];
 static u8  s_blt_ty[3];
 static u8  s_blt_dir[3];  /* 0=right 1=left */
 
+static void save_hi_score(void);
+static void load_hi_score(void);
 static void enter_title(void);
 static void enter_intermission(void);
 static void update_intermission(void);
@@ -137,9 +139,14 @@ static void update_intermission(void)
 
     /* After 600 frames (~10s) loop back to level 1 */
     if (s_intro_tick > 600) {
-        s_looped = 1;
-        game_init();
-        enter_game(0);
+        {
+            u16 saved_score;
+            saved_score = s_score;
+            s_looped = 1;
+            game_init();
+            s_score = saved_score;
+            enter_game(0);
+        }
         return;
     }
 
@@ -390,10 +397,21 @@ static void hud_update(void)
 {
     char buf[6];
 
-    /* T:X (cols 0-2) - offset by 8 after first loop */
-    buf[0] = 'T'; buf[1] = ':';
-    buf[2] = (u8)('1' + g_level + (u8)(s_looped ? 8u : 0u)); buf[3] = 0;
-    PrintString(SCR_2_PLANE, P_HUD, 0, 0, buf);
+    /* T:XX - level number 1-16 */
+    {
+        u8 lnum;
+        lnum = (u8)(1 + g_level + (u8)(s_looped ? 8u : 0u));
+        buf[0] = 'T'; buf[1] = ':';
+        if (lnum >= 10) {
+            buf[2] = '1';
+            buf[3] = (u8)('0' + lnum - 10);
+            buf[4] = 0;
+        } else {
+            buf[2] = (u8)('0' + lnum);
+            buf[3] = 0;
+        }
+        PrintString(SCR_2_PLANE, P_HUD, 0, 0, buf);
+    }
 
     /* 4-digit score (cols 4-7) */
     buf[0] = (u8)('0' + (s_score / 1000)  % 10);
@@ -715,8 +733,7 @@ static void update_game(void)
                 return;
             } else {
                 /* No lives left - back to select */
-                if (s_score > s_hi_score) s_hi_score = s_score;
-                if (s_score > s_hi_score) s_hi_score = s_score;
+                if (s_score > s_hi_score) { s_hi_score = s_score; save_hi_score(); }
                 s_lives = MAX_LIVES;
                 s_score = 0;
                 enter_title();
@@ -995,6 +1012,25 @@ static void draw_player(void)
    Public entry points called from main.c
    ----------------------------------------------------------------------- */
 
+/* -----------------------------------------------------------------------
+   Flash save - hi score persistence
+   Magic number validates save data on load
+   ----------------------------------------------------------------------- */
+#define SAVE_MAGIC 0xA55A
+
+static void save_hi_score(void)
+{
+    /* TODO: wire to save.c SaveGame() once integrated into build */
+    (void)s_hi_score;
+}
+
+static void load_hi_score(void)
+{
+    /* TODO: wire to save.c LoadGame() once integrated into build */
+    s_hi_score = 0;
+}
+
+
 void game_init(void)
 {
     u8 i;
@@ -1015,7 +1051,7 @@ void game_init(void)
     s_player_facing      = 0;
     s_walk_frame         = 0;
     s_key_collected      = 0;
-    if (!s_looped) { s_score = 0; }
+    s_score              = 0;
     s_lives              = MAX_LIVES;
     s_bullets            = MAX_BULLETS;
     s_reloading          = 0;

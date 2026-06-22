@@ -26,6 +26,7 @@ void sound_install(void) {
 }
 
 void sfx_play(u8 id) {
-    /* stub - call PlaySound(id) when real sounds are ready */
-    (void)id;
+    if (id > 0 && id <= 7) {
+        PlaySound(id);
+    }
 }
