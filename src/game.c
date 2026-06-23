@@ -33,6 +33,7 @@ static u8  s_looped;          /* set after completing all 8 levels */
 static u8  s_zombie_mode;     /* Konami easter egg: play as mummy */
 static u8  s_zombie_timer;    /* countdown seconds remaining */
 static u8  s_zombie_frames;   /* frame tick counter for 1-second decrement */
+static u8  s_invincible;       /* debug: timer frozen, no death */
 static u8 s_lives;
 static u8 s_bullets;         /* remaining shots 0-6 */
 static u8 s_reloading;       /* reload animation timer */
@@ -45,8 +46,9 @@ static u8 s_move_timer;
 static u8 s_key_done[MAZE_LEVELS];
 /* Per-level treasure tracking - up to 4 per level */
 static u8 s_treas_count[MAZE_LEVELS];      /* how many treasures found in map */
-static u8 s_treas_tx[MAZE_LEVELS][4];      /* treasure col positions */
-static u8 s_treas_ty[MAZE_LEVELS][4];      /* treasure row positions */
+static u8 s_treas_tx[MAZE_LEVELS][8];      /* treasure col positions */
+static u8 s_treas_ty[MAZE_LEVELS][8];      /* treasure row positions */
+static u8 s_treas_zone[MAZE_LEVELS][8];    /* treasure zone (0 or 1) */
 static u8 s_treas_done[MAZE_LEVELS];       /* bitmask: bit N = treasure N collected */
 
 /* Bullet sprites: 4 sprite slots per bullet, 3 bullets max on screen */
@@ -303,6 +305,7 @@ static void update_title(void)
         music_play(MUSIC_COIN);
         s_looped = 0;
         s_zombie_mode = 0;
+        s_invincible  = 0;
         game_init();
         enter_game(0);
     }
@@ -457,14 +460,17 @@ static void hud_draw_bottom(void)
     }
 
     if (s_zombie_mode) {
-        /* Show countdown timer: T:XX SCORE K XX */
         {
             char tbuf[4];
-            tbuf[0] = (u8)('0' + s_zombie_timer / 10);
-            tbuf[1] = (u8)('0' + s_zombie_timer % 10);
-            tbuf[2] = 0;
-            PrintString(SCR_2_PLANE, P_HUD, 13, 0, "T:");
-            PrintString(SCR_2_PLANE, P_HUD, 15, 0, tbuf);
+            if (s_invincible) {
+                PrintString(SCR_2_PLANE, P_HUD, 13, 0, "INV  ");
+            } else {
+                tbuf[0] = (u8)('0' + s_zombie_timer / 10);
+                tbuf[1] = (u8)('0' + s_zombie_timer % 10);
+                tbuf[2] = 0;
+                PrintString(SCR_2_PLANE, P_HUD, 13, 0, "T:");
+                PrintString(SCR_2_PLANE, P_HUD, 15, 0, tbuf);
+            }
         }
         return;
     }
@@ -495,7 +501,8 @@ static void redraw_collected(void)
     }
     ti = 0;
     for (; ti < s_treas_count[g_level]; ti++) {
-        if (s_treas_done[g_level] & (u8)(1 << ti)) {
+        if ((s_treas_done[g_level] & (u8)(1 << ti)) &&
+            s_treas_zone[g_level][ti] == s_zone) {
             cc = s_treas_tx[g_level][ti];
             rr = s_treas_ty[g_level][ti];
             maze_draw_cell_as(cc, rr, CELL_FLOOR);
@@ -513,8 +520,8 @@ static void update_game(void)
     g_player_tx = s_player_tx;
     g_player_ty = s_player_ty;
 
-    /* Zombie mode: countdown timer */
-    if (s_zombie_mode) {
+    /* Zombie mode: countdown timer (frozen when invincible) */
+    if (s_zombie_mode && !s_invincible) {
         s_zombie_frames++;
         if (s_zombie_frames >= 60) {
             s_zombie_frames = 0;
@@ -597,8 +604,14 @@ static void update_game(void)
     update_bullets();
     draw_bullets();
 
-    /* Option/B exits */
-    if (s_pad_press & J_OPTION) { enter_title(); return; }
+    /* Option: in zombie mode toggles invincibility, otherwise exits */
+    if (s_pad_press & J_OPTION) {
+        if (s_zombie_mode) {
+            s_invincible = (u8)(1 - s_invincible);
+        } else {
+            enter_title(); return;
+        }
+    }
     if (!s_zombie_mode && (s_pad_press & J_B)) {
         /* B = reload */
         if (s_bullets == 0) {
@@ -721,8 +734,9 @@ static void update_game(void)
                 u8 ti;
                 ti = 0;
                 for (; ti < s_treas_count[g_level]; ti++) {
-                    if (s_treas_tx[g_level][ti] == new_tx &&
-                        s_treas_ty[g_level][ti] == new_ty &&
+                    if (s_treas_tx[g_level][ti]   == new_tx &&
+                        s_treas_ty[g_level][ti]   == new_ty &&
+                        s_treas_zone[g_level][ti] == s_zone &&
                         !(s_treas_done[g_level] & (u8)(1 << ti))) {
                         s_treas_done[g_level] |= (u8)(1 << ti);
                     }
@@ -782,34 +796,42 @@ static void update_game(void)
         u8 hit;
         hit = entity_at(s_player_tx, s_player_ty);
         if (hit != 255) {
-            entity_kill(hit);
-            if (s_lives > 0) {
-                s_lives--;
-                s_bullets = MAX_BULLETS;
-                /* Respawn at zone A entry, keep score and collected state */
-                s_zone      = 0;
-                s_player_tx = 1;
-                s_player_ty = 7;
-                s_scroll_px = 0;
-                SCR1_X = 0;
-                ClearScreen(SCR_1_PLANE);
-                SysSetSystemFont();
-                tiles_install();
-                if (s_zombie_mode) { palettes_set_greyscale(); } else { maze_set_wall_palette(g_level); }
-                maze_draw_zone(g_level, 0);
-                redraw_collected();
-                entities_init(g_level, 0);
+            if (s_zombie_mode) {
+                /* Zombie: kill enemy, score, never die */
+                entity_kill(hit);
+                s_score = (u16)(s_score + 200);
+                sfx_play(SFX_KEY_UNLOCK);
                 hud_update();
-                hud_draw_bottom();
-                draw_player();
-                return;
+            } else if (s_invincible) {
+                /* Invincible debug: bounce enemy away, no death */
+                entity_kill(hit);
             } else {
-                /* No lives left - back to select */
-                if (s_score > s_hi_score) { s_hi_score = s_score; save_hi_score(); }
-                s_lives = MAX_LIVES;
-                s_score = 0;
-                enter_title();
-                return;
+                if (s_lives > 0) {
+                    s_lives--;
+                    s_bullets = MAX_BULLETS;
+                    s_zone      = 0;
+                    s_player_tx = 1;
+                    s_player_ty = 7;
+                    s_scroll_px = 0;
+                    SCR1_X = 0;
+                    ClearScreen(SCR_1_PLANE);
+                    SysSetSystemFont();
+                    tiles_install();
+                    maze_set_wall_palette(g_level);
+                    maze_draw_zone(g_level, 0);
+                    redraw_collected();
+                    entities_init(g_level, 0);
+                    hud_update();
+                    hud_draw_bottom();
+                    draw_player();
+                    return;
+                } else {
+                    if (s_score > s_hi_score) { s_hi_score = s_score; save_hi_score(); }
+                    s_lives = MAX_LIVES;
+                    s_score = 0;
+                    enter_title();
+                    return;
+                }
             }
         }
     }
@@ -1169,6 +1191,10 @@ void game_init(void)
         s_key_done[i]     = 0;
         s_treas_done[i]   = 0;
         s_treas_count[i]  = 0;
+        s_treas_zone[i][0] = 0; s_treas_zone[i][1] = 0;
+        s_treas_zone[i][2] = 0; s_treas_zone[i][3] = 0;
+        s_treas_zone[i][4] = 0; s_treas_zone[i][5] = 0;
+        s_treas_zone[i][6] = 0; s_treas_zone[i][7] = 0;
     }
     for (i = 0; i < 3; i++) {
         s_blt_active[i]   = 0;
@@ -1181,15 +1207,22 @@ void game_init(void)
     lv = 0;
     for (; lv < MAZE_LEVELS; lv++) {
         s_treas_count[lv] = 0;
-        ro = 0;
-        for (; ro < MAZE_ROWS; ro++) {
-            co = 0;
-            for (; co < MAZE_COLS; co++) {
-                if (maze_cell_raw(lv, 0, co, ro) == CELL_TREASURE &&
-                    s_treas_count[lv] < 4) {
-                    s_treas_tx[lv][s_treas_count[lv]] = co;
-                    s_treas_ty[lv][s_treas_count[lv]] = ro;
-                    s_treas_count[lv]++;
+        {
+            u8 zn;
+            zn = 0;
+            for (; zn < MAZE_ZONES; zn++) {
+                ro = 0;
+                for (; ro < MAZE_ROWS; ro++) {
+                    co = 0;
+                    for (; co < MAZE_COLS; co++) {
+                        if (maze_cell_raw(lv, zn, co, ro) == CELL_TREASURE &&
+                            s_treas_count[lv] < 8) {
+                            s_treas_tx[lv][s_treas_count[lv]]   = co;
+                            s_treas_ty[lv][s_treas_count[lv]]   = ro;
+                            s_treas_zone[lv][s_treas_count[lv]] = zn;
+                            s_treas_count[lv]++;
+                        }
+                    }
                 }
             }
         }
