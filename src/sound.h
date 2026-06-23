@@ -1,10 +1,9 @@
 #ifndef SOUND_H
 #define SOUND_H
+#include "ngpc.h"
+#include "library.h"
 
-#include "game.h"
-
-/* Sound effect IDs */
-#define SFX_NONE        0
+/* SFX slot IDs - passed to sfx_play() */
 #define SFX_SHOOT       1
 #define SFX_RELOAD      2
 #define SFX_ENEMY_SPAWN 3

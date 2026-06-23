@@ -1,6 +1,7 @@
 #include "tutankham.h"
 #include "entities.h"
 #include "sound.h"
+#include "music.h"
 
 /* 32x32 Tut mask - defined in tiles.c */
 extern const unsigned short tut_mask_32[16][8];
@@ -29,6 +30,9 @@ static u8  s_intro_px;        /* player x pixel position */
 static u8  s_intro_walk;      /* walk frame toggle */
 static u8  s_intro_wtimer;    /* walk animation timer */
 static u8  s_looped;          /* set after completing all 8 levels */
+static u8  s_zombie_mode;     /* Konami easter egg: play as mummy */
+static u8  s_zombie_timer;    /* countdown seconds remaining */
+static u8  s_zombie_frames;   /* frame tick counter for 1-second decrement */
 static u8 s_lives;
 static u8 s_bullets;         /* remaining shots 0-6 */
 static u8 s_reloading;       /* reload animation timer */
@@ -54,6 +58,7 @@ static u8  s_blt_dir[3];  /* 0=right 1=left */
 
 static void save_hi_score(void);
 static void load_hi_score(void);
+static void palettes_set_greyscale(void);
 static void enter_title(void);
 static void enter_intermission(void);
 static void update_intermission(void);
@@ -282,7 +287,10 @@ static void update_title(void)
             s_konami_step++;
             if (s_konami_step >= 10) {
                 s_konami_step = 0;
-                enter_select();
+                s_looped = 0;
+                game_init();
+                s_zombie_mode = 1;  /* set AFTER game_init clears it */
+                enter_game(0);
                 return;
             }
         } else {
@@ -292,7 +300,9 @@ static void update_title(void)
         }
     }
     if (s_pad_press != 0 && s_konami_step == 0) {
+        music_play(MUSIC_COIN);
         s_looped = 0;
+        s_zombie_mode = 0;
         game_init();
         enter_game(0);
     }
@@ -384,8 +394,8 @@ static void enter_game(u8 level)
     s_scroll_px = target;
     SCR1_X = s_scroll_px;
 
+    if (s_zombie_mode) { palettes_set_greyscale(); } else { maze_set_wall_palette(level); }
     maze_draw_zone(level, s_zone);
-    maze_set_wall_palette(level);
     redraw_collected();
     entities_init(level, s_zone);
     hud_update();
@@ -446,6 +456,18 @@ static void hud_draw_bottom(void)
         }
     }
 
+    if (s_zombie_mode) {
+        /* Show countdown timer: T:XX SCORE K XX */
+        {
+            char tbuf[4];
+            tbuf[0] = (u8)('0' + s_zombie_timer / 10);
+            tbuf[1] = (u8)('0' + s_zombie_timer % 10);
+            tbuf[2] = 0;
+            PrintString(SCR_2_PLANE, P_HUD, 13, 0, "T:");
+            PrintString(SCR_2_PLANE, P_HUD, 15, 0, tbuf);
+        }
+        return;
+    }
     /* 6 bullet icons: cols 14-19 */
     for (i = 0; i < MAX_BULLETS; i++) {
         if (i < s_bullets) {
@@ -491,6 +513,39 @@ static void update_game(void)
     g_player_tx = s_player_tx;
     g_player_ty = s_player_ty;
 
+    /* Zombie mode: countdown timer */
+    if (s_zombie_mode) {
+        s_zombie_frames++;
+        if (s_zombie_frames >= 60) {
+            s_zombie_frames = 0;
+            if (s_zombie_timer > 0) {
+                s_zombie_timer--;
+                hud_draw_bottom();
+            }
+            if (s_zombie_timer == 0) {
+                sfx_play(SFX_PLAYER_DIE);
+                if (s_lives > 0) {
+                    s_lives--;
+                    s_zombie_timer  = 60;
+                    s_zombie_frames = 0;
+                    s_player_tx     = 1;
+                    s_player_ty     = 7;
+                    s_key_collected = 0;
+                    draw_player();
+                    hud_update();
+                    hud_draw_bottom();
+                } else {
+                    if (s_score > s_hi_score) { s_hi_score = s_score; save_hi_score(); }
+                    s_lives     = MAX_LIVES;
+                    s_score     = 0;
+                    s_zombie_mode = 0;
+                    enter_title();
+                }
+                return;
+            }
+        }
+    }
+
     /* Animate generators and enemies */
     update_generators();
     entities_update();
@@ -500,31 +555,41 @@ static void update_game(void)
     if (entity_at(s_player_tx, s_player_ty) != 255) {
         u8 hit2;
         hit2 = entity_at(s_player_tx, s_player_ty);
-        entity_kill(hit2);
-        sfx_play(SFX_PLAYER_DIE);
-        if (s_lives > 0) {
-            s_lives--;
-            s_bullets = MAX_BULLETS;
-            s_zone      = 0;
-            s_player_tx = 1;
-            s_player_ty = 7;
-            s_scroll_px = 0;
-            SCR1_X = 0;
-            ClearScreen(SCR_1_PLANE);
-            SysSetSystemFont();
-            tiles_install();
-            maze_draw_zone(g_level, 0);
-            maze_set_wall_palette(g_level);
-            redraw_collected();
-            entities_init(g_level, 0);
+        if (s_zombie_mode) {
+            /* Zombie: touch enemy to kill it */
+            entity_kill(hit2);
+            s_score = (u16)(s_score + 200);
+            sfx_play(SFX_KEY_UNLOCK);
             hud_update();
-            hud_draw_bottom();
-            draw_player();
-            return;
         } else {
-            s_lives = MAX_LIVES;
-            enter_select();
-            return;
+            entity_kill(hit2);
+            sfx_play(SFX_PLAYER_DIE);
+            if (s_lives > 0) {
+                s_lives--;
+                s_bullets   = MAX_BULLETS;
+                s_zone      = 0;
+                s_player_tx = 1;
+                s_player_ty = 7;
+                s_scroll_px = 0;
+                SCR1_X = 0;
+                ClearScreen(SCR_1_PLANE);
+                SysSetSystemFont();
+                tiles_install();
+                if (s_zombie_mode) { palettes_set_greyscale(); } else { maze_set_wall_palette(g_level); }
+                maze_draw_zone(g_level, 0);
+                redraw_collected();
+                entities_init(g_level, 0);
+                hud_update();
+                hud_draw_bottom();
+                draw_player();
+                return;
+            } else {
+                if (s_score > s_hi_score) { s_hi_score = s_score; save_hi_score(); }
+                s_lives = MAX_LIVES;
+                s_score = 0;
+                enter_title();
+                return;
+            }
         }
     }
 
@@ -534,7 +599,7 @@ static void update_game(void)
 
     /* Option/B exits */
     if (s_pad_press & J_OPTION) { enter_title(); return; }
-    if (s_pad_press & J_B) {
+    if (!s_zombie_mode && (s_pad_press & J_B)) {
         /* B = reload */
         if (s_bullets == 0) {
             s_bullets   = MAX_BULLETS;
@@ -545,8 +610,8 @@ static void update_game(void)
         return;
     }
 
-    /* A = fire */
-    if (s_pad_press & J_A) {
+    /* A = fire (disabled in zombie mode) */
+    if (!s_zombie_mode && (s_pad_press & J_A)) {
         if (s_bullets > 0 && !s_reloading) {
             fire_bullet();
             s_bullets--;
@@ -634,8 +699,8 @@ static void update_game(void)
         ClearScreen(SCR_2_PLANE);
         SysSetSystemFont();
         tiles_install();
+        if (s_zombie_mode) { palettes_set_greyscale(); } else { maze_set_wall_palette(g_level); }
         maze_draw_zone(g_level, s_zone);
-        maze_set_wall_palette(g_level);
         redraw_collected();
         entities_init(g_level, s_zone);
         hud_update();
@@ -665,6 +730,9 @@ static void update_game(void)
             }
             maze_draw_cell_as(new_tx, new_ty, CELL_FLOOR);
             s_score = (u16)(s_score + 500);
+            if (s_zombie_mode && s_zombie_timer < 55) {
+                s_zombie_timer = (u8)(s_zombie_timer + 5);  /* +5 sec bonus */
+            }
             hud_update();
         } else if (cell == CELL_DOOR) {
             if (!s_key_collected) {
@@ -672,6 +740,10 @@ static void update_game(void)
             }
             s_score = (u16)(s_score + 1000);
             sfx_play(SFX_TOMB_ENTER);
+            music_play(MUSIC_STAGE_CLEAR);
+            if (s_zombie_mode && s_zombie_timer <= 240) {
+                s_zombie_timer = (u8)(s_zombie_timer + 15);
+            }
             if (g_level >= MAZE_LEVELS - 1) {
                 enter_intermission();
             } else {
@@ -723,8 +795,8 @@ static void update_game(void)
                 ClearScreen(SCR_1_PLANE);
                 SysSetSystemFont();
                 tiles_install();
+                if (s_zombie_mode) { palettes_set_greyscale(); } else { maze_set_wall_palette(g_level); }
                 maze_draw_zone(g_level, 0);
-                maze_set_wall_palette(g_level);
                 redraw_collected();
                 entities_init(g_level, 0);
                 hud_update();
@@ -979,7 +1051,11 @@ static void draw_player(void)
         u8 tr;
         u8 bl;
         u8 br;
-        if (s_walk_frame == 0) {
+        if (s_zombie_mode) {
+            tl = T_MUMMY_TL; tr = T_MUMMY_TR;
+            bl = T_MUMMY_BL; br = T_MUMMY_BR;
+            flip = (u8)(1 - flip);  /* mummy faces left natively, invert */
+        } else if (s_walk_frame == 0) {
             tl = T_PLAY_TL;  tr = T_PLAY_TR;
             bl = T_PLAY_BL;  br = T_PLAY_BR;
         } else {
@@ -1030,6 +1106,29 @@ static void load_hi_score(void)
     s_hi_score = 0;
 }
 
+
+/* -----------------------------------------------------------------------
+   Zombie mode: switch all palettes to greyscale
+   ----------------------------------------------------------------------- */
+static void palettes_set_greyscale(void)
+{
+    /* Scroll plane 1 - walls, keys, treasures etc */
+    SetPalette(SCR_1_PLANE, 0, RGB(0,0,0), RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+    SetPalette(SCR_1_PLANE, 1, RGB(0,0,0), RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    SetPalette(SCR_1_PLANE, 2, RGB(0,0,0), RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+    SetPalette(SCR_1_PLANE, 3, RGB(0,0,0), RGB(3,3,3), RGB(8,8,8),  RGB(13,13,13));
+    SetPalette(SCR_1_PLANE, 4, RGB(0,0,0), RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    SetPalette(SCR_1_PLANE, 5, RGB(0,0,0), RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    SetPalette(SCR_1_PLANE, 6, RGB(0,0,0), RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+    SetPalette(SCR_1_PLANE, 7, RGB(0,0,0), RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    /* Scroll plane 2 - HUD (keep yellow tint for readability) */
+    SetPalette(SCR_2_PLANE, 0, RGB(0,0,0), RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+    /* Sprite palettes */
+    SetPalette(SPRITE_PLANE, 0, 0, RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+    SetPalette(SPRITE_PLANE, 1, 0, RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    SetPalette(SPRITE_PLANE, 2, 0, RGB(4,4,4), RGB(9,9,9),  RGB(14,14,14));
+    SetPalette(SPRITE_PLANE, 3, 0, RGB(5,5,5), RGB(10,10,10), RGB(15,15,15));
+}
 
 void game_init(void)
 {
@@ -1105,6 +1204,7 @@ void game_update(void)
     s_pad_cur   = (u8)(JOYPAD & 0x7F);
     s_pad_press = (u8)(s_pad_cur & ~s_pad_prev);
 
+    music_update();
     if      (g_state == STATE_TITLE)       { update_title(); }
     else if (g_state == STATE_SELECT)      { update_select(); }
     else if (g_state == STATE_GAME)        { update_game(); }
